@@ -1,0 +1,139 @@
+<!doctype 
+html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <title>Dashboard - Personal Finance Tracker</title>
+        <link rel="stylesheet" href="{{url_for('static',filename='style.css')}}">
+    </head>
+    <body class="{{'dark' if user['dark_mode'] else ''}}">
+        <nav>
+            <div class="brand">💰 Personal Finance Tracker</div>
+            <div><a href="{{url_for('dashboard')}}">Dashboard</a>
+                <a href="{{url_for('history')}}">Transactions</a>
+                <a href="{{url_for('reports')}}">Reports</a>
+                <a href="{{url_for('settings')}}">Settings</a>
+                <a href="{{url_for('logout')}}">Logout</a>
+            </div>
+        </nav>
+        <main>
+            <h1>Dashboard</h1>
+            <p>Welcome, <b>{{user['username']}}</b> 
+                👋</p>{% for a in alerts %}<div class="warning">⚠️ {{a}}
+				</div>{% endfor %}{% with messages=get_flashed_messages() %}{% for m in messages %}
+				<div class="success">{{m}}</div>{% endfor %}{% endwith %}<section class="cards">
+				<div>
+				<span>Total Income</span>
+				<b>₹{{'%.2f'|format(income)}}</b>
+				</div>
+				<div>
+				<span>Total Expense</span>
+				<b>₹{{'%.2f'|format(expense)}}</b>
+				</div>
+				<div>
+				<span>Balance</span>
+				<b>₹{{'%.2f'|format(balance)}}</b>
+				</div>
+				<div>
+				<span>This Month Expense</span>
+				<b>₹{{'%.2f'|format(mexpense)}}</b>
+				</div></section>
+				<section class="grid2">
+				<div class="panel">
+				<h2>Add Transaction</h2>
+				<form action="{{url_for('add')}}" method="post" class="form-grid">
+				<input type="date" name="trans_date" value="{{today}}" required>
+				<input name="description" placeholder="Description" required>
+				<select name="category">{% for c in categories %}<option>{{c}}
+				</option>{% endfor %}</select>
+				<input type="number" name="amount" step="0.01" min="0.01" placeholder="Amount" required>
+				<select name="type">
+				<option>Expense</option>
+				<option>Income</option>
+				</select>
+				<label><input type="checkbox" name="recurring"> Recurring expense/income</label>
+				<button>Add Transaction</button>
+				</form>
+				</div>
+				<div class="panel">
+				<h2>Budget & Savings</h2>
+				<p>Monthly Budget: <b>₹{{'%.2f'|format(budget)}}</b></p>
+				<progress max="100" value="{{[budget_used,100]|min}}"></progress>
+				<p>{{'%.1f'|format(budget_used)}}% of budget used</p>
+				<p>Savings Goal: <b>₹{{'%.2f'|format(goal)}}</b></p>
+				<p>Current Savings: <b>₹{{'%.2f'|format(savings)}}</b></p>
+				</div>
+				</section>
+				<section class="grid2">
+				<div class="panel">
+				<h2>Income vs Expense</h2>
+				<canvas id="bar">
+				</canvas>
+				</div>
+				<div class="panel">
+				<h2>Expense Categories</h2>
+				<canvas id="pie"></canvas>
+				</div>
+				</section><section class="panel">
+				<h2>Recent Transactions</h2>
+				<table>
+				<tr><th>Date</th>
+				<th>Type</th>
+				<th>Category</th>
+				<th>Description</th>
+				<th>Amount</th>
+				</tr>{% for t in transactions %}<tr>
+				<td>{{t['trans_date']}}</td>
+				<td>{{t['type']}}</td>
+				<td>{{t['category']}}</td>
+				<td>{{t['description']}}</td>
+				<td>₹{{'%.2f'|format(t['amount'])}}</td>
+				</tr>{% else %}<tr>
+				<td colspan="5">No transactions yet.</td>
+				</tr>{% endfor %}</table><a class="button" href="{{url_for('history')}}">View All & Filter</a>
+				</section>
+				</main>
+				<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+new Chart(document.getElementById('bar'), {
+    type: 'bar',
+    data: {
+        labels: ['Income', 'Expense', 'Balance'],
+        datasets: [{
+            label: 'Amount (₹)',
+            data: [{{ income }}, {{ expense }}, {{ balance }}]
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                display: true
+            }
+        }
+    }
+});
+
+new Chart(document.getElementById('pie'), {
+    type: 'doughnut',
+    data: {
+        labels: {{ cats.keys()|list|tojson }},
+        datasets: [{
+            label: 'Expenses',
+            data: {{ cats.values()|list|tojson }}
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                display: true
+            }
+        }
+    }
+});
+</script>
+				</body>
+				</html>
